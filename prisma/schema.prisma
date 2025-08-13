@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accion_comercial {
+  accion_comercial_id Int       @id @default(autoincrement())
+  cliente_id          Int?
+  cita_id             Int?
+  pago_id             Int?
+  persona_id          Int?
+  estado              String?   @db.VarChar(25)
+  fecha_accion        DateTime? @default(now()) @db.Timestamp(6)
+  nota                String
+  cliente             cliente?  @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "accion_comercial_ibfk_1")
+  cita                cita?     @relation(fields: [cita_id], references: [cita_id], onUpdate: NoAction, map: "accion_comercial_ibfk_2")
+  pago                pago?     @relation(fields: [pago_id], references: [pago_id], onUpdate: NoAction, map: "accion_comercial_ibfk_3")
+  persona             persona?  @relation(fields: [persona_id], references: [persona_id], onUpdate: NoAction, map: "accion_comercial_ibfk_4")
+}
+
+model campanha {
+  campanha_id       Int                @id @default(autoincrement())
+  nombre_campanha   String             @db.VarChar(100)
+  descripcion       String?
+  fecha_creacion    DateTime?          @default(now()) @db.Timestamp(6)
+  estado_campanha   String?            @default("activa") @db.VarChar(25)
+  mensaje_cliente   String?
+  fecha_inicio      DateTime?          @default(now()) @db.Timestamp(6)
+  fecha_fin         DateTime?          @db.Timestamp(6)
+  num_clientes      Int?               @default(0)
+  tipo              String             @default("in") @db.VarChar(10)
+  template_id       Int?
+  variable_mappings Json?              @default("{}")
+  template          template?          @relation(fields: [template_id], references: [id], map: "fk_campanha_template")
+  cliente_campanha  cliente_campanha[]
+}
+
+model cita {
+  cita_id          Int                @id @default(autoincrement())
+  cliente_id       Int
+  conversacion_id  Int?
+  fecha_cita       DateTime           @db.Timestamp(6)
+  estado_cita      String?            @default("agendada") @db.VarChar(25)
+  motivo           String             @db.VarChar(100)
+  fecha_creacion   DateTime           @default(now()) @db.Timestamp(6)
+  aviso            Int?               @default(0)
+  accion_comercial accion_comercial[]
+  cliente          cliente            @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "cita_ibfk_1")
+  conversacion     conversacion?      @relation(fields: [conversacion_id], references: [conversacion_id], onUpdate: NoAction, map: "cita_ibfk_2")
+  pago             pago[]
+}
+
+model cliente {
+  cliente_id                   Int                @id @default(autoincrement())
+  documento_identidad          String?            @db.VarChar(12)
+  tipo_documento               String?            @db.VarChar(20)
+  nombre                       String             @db.VarChar(100)
+  apellido                     String?            @db.VarChar(100)
+  celular                      String             @db.VarChar(20)
+  email                        String?            @db.VarChar(100)
+  fecha_creacion               DateTime?          @default(now()) @db.Timestamp(6)
+  fecha_ultima_interaccion     DateTime?          @db.Timestamp(6)
+  fecha_ultima_interaccion_bot DateTime?          @db.Timestamp(6)
+  categoria_no_interes         String?            @db.VarChar(20)
+  detalle_no_interes           String?            @db.VarChar(100)
+  bound                        Boolean?
+  observacion                  String?
+  gestor                       String?            @db.VarChar(100)
+  accion                       String?            @db.VarChar(50)
+  in_out                       Boolean?           @default(false)
+  score                        String             @default("no_score") @db.VarChar(20)
+  estado                       String?            @db.VarChar(50)
+  detalle                      String?
+  estado_asesor                String?            @db.VarChar(50)
+  monto                        String?            @db.VarChar(100)
+  feccuota                     String?            @db.VarChar(50)
+  modelo                       String?            @db.VarChar(100)
+  codpago                      String?            @db.VarChar(150)
+  Cta_Act_Pag                  Int?
+  codigo_asociado              String?            @db.VarChar(100)
+  accion_comercial             accion_comercial[]
+  cita                         cita[]
+  cliente_campanha             cliente_campanha[]
+  codigo_pago                  codigo_pago[]
+  contrato                     contrato?
+  conversacion                 conversacion[]
+  historico_score              historico_score[]
+  leadh                        leadh[]
+  pago                         pago[]
+  retry_count                  Int?               @default(0)
+}
+
+model cliente_campanha {
+  cliente_campanha_id Int       @id @default(autoincrement())
+  cliente_id          Int
+  campanha_id         Int
+  fecha_asociacion    DateTime? @default(now()) @db.Timestamp(6)
+  whatsapp_message_id String?   @db.VarChar(255)
+  estado_mensaje      String?   @db.VarChar(50)
+  fecha_envio         DateTime? @db.Timestamp(6)
+  fecha_ultimo_estado DateTime? @db.Timestamp(6)
+  error_code          String?   @db.VarChar(50)
+  error_descripcion   String?
+  retry_count         Int?      @default(0)
+  cliente             cliente   @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "cliente_campanha_ibfk_1")
+  campanha            campanha  @relation(fields: [campanha_id], references: [campanha_id], onDelete: Cascade, onUpdate: NoAction, map: "cliente_campanha_ibfk_2")
+}
+
+model codigo_pago {
+  id_codigo_pago    Int       @id @default(autoincrement())
+  cliente_id        Int?
+  codigo            Int       @unique
+  tipo_codigo       String?   @db.VarChar(50)
+  caso_relacionado  String?   @db.VarChar(100)
+  fecha_asignacion  DateTime  @db.Date
+  fecha_vencimiento DateTime? @db.Date
+  activo            Boolean?  @default(true)
+  pago_realizado    Boolean?  @default(false)
+  fecha_pago        DateTime? @db.Date
+  numero_cuota      Int?
+  cliente           cliente?  @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "codigo_pago_fk_cliente")
+}
+
+model contrato {
+  contrato_id      Int                @id @default(autoincrement())
+  cliente_id       Int                @unique(map: "unq_contrato_cliente")
+  estado           String?            @default("en seguimiento") @db.VarChar(50)
+  motivo           String?            @default("desconocido")
+  fecha_pago       DateTime?          @default(now()) @db.Timestamp(6)
+  cliente          cliente            @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "cita_ibfk_1")
+  historico_estado historico_estado[]
+  historico_pago   historico_pago[]
+}
+
+model conversacion {
+  conversacion_id          Int       @id @default(autoincrement())
+  cliente_id               Int
+  fecha_conversacion       DateTime? @default(now()) @db.Timestamp(6)
+  tipo_conversacion        String?   @db.VarChar(50)
+  mensaje                  String?
+  resultado                String?   @db.VarChar(50)
+  estado_conversacion      String?   @default("activa") @db.VarChar(25)
+  fecha_ultima_interaccion DateTime? @default(now()) @db.Timestamp(6)
+  nivel_satisfaccion       String?   @db.VarChar(25)
+  cita                     cita[]
+  cliente                  cliente   @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "conversacion_ibfk_1")
+}
+
+model historico_estado {
+  historico_estado_id Int       @id @default(autoincrement())
+  contrato_id         Int
+  estado              String    @db.VarChar(25)
+  fecha_estado        DateTime? @default(now()) @db.Timestamp(6)
+  motivo              String?
+  detalle             String?
+  contrato            contrato  @relation(fields: [contrato_id], references: [contrato_id], onDelete: Cascade, onUpdate: NoAction, map: "historico_estado_ibfk_1")
+}
+
+model historico_pago {
+  historico_pago_id Int       @id @default(autoincrement())
+  contrato_id       Int
+  fecha_pago        DateTime? @default(now()) @db.Timestamp(6)
+  detalle           String?
+  contrato          contrato  @relation(fields: [contrato_id], references: [contrato_id], onDelete: Cascade, onUpdate: NoAction, map: "historico_motivo_ibfk_1")
+}
+
+model historico_score {
+  historico_score_id Int       @id @default(autoincrement())
+  cliente_id         Int
+  score              String    @db.VarChar(20)
+  fecha_cambio       DateTime? @default(now()) @db.Timestamp(6)
+  cliente            cliente   @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "historico_score_ibfk_1")
+}
+
+model leadh {
+  leadh_id       Int      @id @default(autoincrement())
+  cliente_id     Int
+  fecha_contacto DateTime @db.Timestamp(6)
+  prioridad_lead Int
+  leadh_source   String   @db.VarChar(100)
+  campanha       String?  @db.VarChar(100)
+  tipo           String?  @db.VarChar(100)
+  canal_lead     String?  @db.VarChar(20)
+  estado_lead    String?  @default("en seguimiento") @db.VarChar(25)
+  nota           String?
+  cliente        cliente  @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "leadh_ibfk_1")
+}
+
+model pago {
+  pago_id          Int                @id @default(autoincrement())
+  cliente_id       Int
+  cita_id          Int?
+  fecha_pago       DateTime           @db.Timestamp(6)
+  monto            Decimal            @db.Decimal(10, 2)
+  metodo_pago      String             @db.VarChar(50)
+  estado_pago      String?            @default("pendiente") @db.VarChar(25)
+  first_name       String?            @db.VarChar(40)
+  last_name        String?            @db.VarChar(40)
+  num_operacion    String?            @db.VarChar(40)
+  accion_comercial accion_comercial[]
+  cliente          cliente            @relation(fields: [cliente_id], references: [cliente_id], onDelete: Cascade, onUpdate: NoAction, map: "pago_ibfk_1")
+  cita             cita?              @relation(fields: [cita_id], references: [cita_id], onUpdate: NoAction, map: "pago_ibfk_2")
+}
+
+model persona {
+  persona_id       Int                @id
+  nombre           String             @db.VarChar(120)
+  primer_apellido  String             @db.VarChar(120)
+  segundo_apellido String?            @db.VarChar(120)
+  celular          String?            @db.VarChar(12)
+  num_leads        Int?               @default(0)
+  accion_comercial accion_comercial[]
+  usuario          usuario            @relation(fields: [persona_id], references: [usuario_id], onDelete: Cascade, onUpdate: NoAction, map: "persona_fk_usuario")
+}
+
+model rol {
+  rol_id      Int       @id @default(autoincrement())
+  nombre_rol  String    @unique @db.VarChar(50)
+  descripcion String?   @db.VarChar(255)
+  usuario     usuario[]
+}
+
+model template {
+  id                   Int        @id @default(autoincrement())
+  nombre_template      String     @db.VarChar(100)
+  mensaje              String
+  created_at           DateTime   @default(now()) @db.Timestamp(6)
+  template_content_sid String     @default("") @db.VarChar(120)
+  parametro            Boolean    @default(false)
+  campanha             campanha[]
+}
+
+model usuario {
+  usuario_id Int      @id @default(autoincrement())
+  username   String   @unique @db.VarChar(50)
+  password   String   @db.VarChar(255)
+  rol_id     Int?     @default(2)
+  activo     Boolean  @default(true)
+  persona    persona?
+  rol        rol?     @relation(fields: [rol_id], references: [rol_id], onUpdate: NoAction, map: "usuario_fk_rol")
+}
+
+model notificaciones {
+  id_notificacion Int       @id @default(autoincrement())
+  cliente_id      Int?
+  mensaje         String?
+  fecha           DateTime? @default(now()) @db.Timestamp(6)
+}
