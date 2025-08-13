@@ -2,7 +2,7 @@
   "name": "envios-meta",
   "version": "1.0.0",
   "description": "WhatsApp Campaign Service for Google Cloud Run",
-  "main": "route_gcp_fixed.js",
+  "main": "index.js",
   "scripts": {
     "start": "node route_gcp_fixed.js",
     "dev": "node route_gcp_fixed.js"
